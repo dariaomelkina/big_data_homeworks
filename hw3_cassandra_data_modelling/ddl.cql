@@ -1,4 +1,5 @@
-DROP TABLE IF EXISTS product_reviews;
+DROP TABLE IF EXISTS reviews_by_product;
+DROP TABLE IF EXISTS reviews_by_customer;
 
 CREATE TABLE reviews_by_product (  
    product_id UUID, 
