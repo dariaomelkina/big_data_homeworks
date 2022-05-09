@@ -1,0 +1,1 @@
+python3 py_scripts/write_to_cassandra.py
