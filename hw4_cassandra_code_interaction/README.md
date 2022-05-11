@@ -1,10 +1,5 @@
 # HW 4: Cassandra code interaction
 
-## Prerequisites:
-```
-pip install cassandra-driver
-```
-
 ## Run example:
 Launch one-node Cassandra, create tables and write data into it (path to data file is hardcoded in [py_scripts/write_to_cassandra.py](py_scripts/write_to_cassandra.py)):
 ```
