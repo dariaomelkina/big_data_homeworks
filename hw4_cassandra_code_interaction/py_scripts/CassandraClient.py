@@ -2,6 +2,7 @@ class CassandraClient:
     """
     Class for communicating with Cassandra.
     """
+
     def __init__(self, host, port, keyspace):
         self.host = host
         self.port = port
@@ -14,17 +15,22 @@ class CassandraClient:
         self.session = cluster.connect(self.keyspace)
 
     def execute(self, query):
-        self.session.execute(query)
+        return self.session.execute(query)
 
     def close(self):
         self.session.shutdown()
 
-    def read_from_table(self, table_name):
-        query = "SELECT * FROM %s" % table_name
-        rows = self.session.execute(query)
-        for row in rows:
-            print(row)
-
-    def insert_course_record(self, table, name, year, conducted):
-        query = "INSERT INTO %s (name, year, conducted) VALUES ('%s', %d, %r)" % (table, name, year, conducted)
+    def insert_into_table(self, table, *values):
+        if table == "reviews_by_product":
+            query = f"INSERT INTO {table} (product_id, product_title, star_rating, review_headline, review_body) " \
+                    f"VALUES ($${values[0]}$$, $${values[1]}$$, {values[2]}, $${values[3]}$$, $${values[4]}$$)"
+        elif table == "reviews_by_customer":
+            query = f"INSERT INTO {table} (customer_id, product_title, review_headline, review_body) " \
+                    f"VALUES ($${values[0]}$$, $${values[1]}$$, $${values[2]}$$, $${values[3]}$$)"
+        elif table == "reviews_by_year_product":
+            query = f"INSERT INTO {table} (year, product_id, star_rating, product_title) " \
+                    f"VALUES ({values[0]}, '{values[1]}', {values[2]}, $${values[3]}$$)"
+        else:
+            query = f"INSERT INTO {table} (year, customer_id, star_rating) " \
+                    f"VALUES ({values[0]}, '{values[1]}', {values[2]});"
         self.execute(query)

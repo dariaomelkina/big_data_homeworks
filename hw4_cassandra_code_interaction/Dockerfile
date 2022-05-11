@@ -3,10 +3,14 @@ FROM python:3.9-slim
 RUN apt-get update
 
 RUN pip install --upgrade pip
-
 RUN pip install cassandra-driver
+RUN pip install pandas
+RUN pip install flask
 
-COPY py_scripts/read_from_cassandra.py /opt/app/
-COPY py_scripts/CassandraClient.py /opt/app/
+WORKDIR /python-docker
 
-ENTRYPOINT ["python", "/opt/app/read_from_cassandra.py"]
+COPY py_scripts/app.py .
+COPY py_scripts/CassandraClient.py .
+
+#ENTRYPOINT ["python", "/opt/app/app.py"]
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
