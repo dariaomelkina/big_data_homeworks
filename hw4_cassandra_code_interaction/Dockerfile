@@ -12,5 +12,4 @@ WORKDIR /python-docker
 COPY py_scripts/app.py .
 COPY py_scripts/CassandraClient.py .
 
-#ENTRYPOINT ["python", "/opt/app/app.py"]
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=8080"]

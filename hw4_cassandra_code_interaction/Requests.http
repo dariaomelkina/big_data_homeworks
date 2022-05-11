@@ -1,0 +1,74 @@
+###
+# Task 1
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 1,
+  "product_id": "0439358078"
+}
+
+###
+# Task 2
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 2,
+  "product_id": "0439358078",
+  "star_rating": 5
+}
+
+###
+# Task 3
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 3,
+  "customer_id": "52534781"
+}
+
+###
+# Task 4
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 4,
+  "year": 2005,
+  "N": 3
+}
+
+###
+# Task 5
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 5,
+  "year": 2005,
+  "N": 3
+}
+
+###
+# Task 6
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 6,
+  "year": 2005,
+  "N": 4
+}
+
+###
+# Task 7
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 7,
+  "year": 2005,
+  "N": 4
+}

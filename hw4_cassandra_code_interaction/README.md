@@ -20,16 +20,18 @@ Read from Cassandra to answer the questions from task (for some tasks (1, 2, 3, 
 bash sh_scripts/read_from_cassandra.sh
 ```
 
-Results example:
-![Result example](images/result.png)
+Results example (i accidentally forgot to change port to 8080 from 5000 in these examples, but in final version port is 8080) 
+with requests from [Requests.http](Requests.http) file:
+![Result example 1](images/result1.png)
+![Result example 2](images/result2.png)
+![Result example 3](images/result3.png)
+![Result example 4](images/result4.png)
+![Result example 5](images/result5.png)
+![Result example 6](images/result6.png)
+![Result example 7](images/result7.png)
 
 Finally shutdown Cassandra:
 ```
 bash sh_scripts/shutdown_cassandra.sh
 ```
-
-
-## Tasks details:
-1. DDL script for creating tables: [cql_scripts/ddl.cql](cql_scripts/ddl.cql)
-1. 
 
