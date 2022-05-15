@@ -1,0 +1,2 @@
+docker build -f Dockerfile.read . -t kafka_read:1.0
+docker run --network kafka-network -v /Users/dashaomelkina/big_data/big_data_homeworks/hw7_kafka_write_with_code/results:/python-docker/results --rm kafka_read:1.0
