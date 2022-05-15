@@ -4,3 +4,6 @@ __pycache__/
 amazon_reviews_us_Books_v1_02.tsv.gz
 hw4_cassandra_code_interaction/amazon_reviews_us_Books_v1_02.tsv
 hw4_cassandra_code_interaction/temp.py
+archive.zip
+archive
+hw6_kafka_read_with_code/twcs.csv
