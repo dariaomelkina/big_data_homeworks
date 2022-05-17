@@ -1,0 +1,13 @@
+FROM python:3.9-slim
+
+RUN apt-get update
+
+RUN pip install --upgrade pip
+RUN pip install cassandra-driver
+
+WORKDIR /python-docker
+
+COPY ./from_kafka_to_cassandra.py .
+COPY cassandra_part/CassandraClient.py .
+
+CMD [ "python3", "from_kafka_to_cassandra.py"]
