@@ -2,5 +2,6 @@ CREATE  KEYSPACE frauds WITH REPLICATION = {'class' : 'SimpleStrategy', 'replica
 
 USE frauds;
 
-CREATE TABLE sender (uid text, isFraud int, amount float, PRIMARY KEY ((uid), isFraud, amount));
+CREATE TABLE sender_fraud (uid text, isFraud int, amount float, PRIMARY KEY ((uid), isFraud));
+CREATE TABLE sender_amount (uid text, amount float, PRIMARY KEY ((uid), amount));
 CREATE TABLE receiver (uid text, transaction_date date, amount float, PRIMARY KEY ((uid), transaction_date));

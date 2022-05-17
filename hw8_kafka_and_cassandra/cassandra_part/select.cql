@@ -1,10 +1,10 @@
 USE frauds;
 -- # 1 Return all fraud transaction for specific user (uid)
-SELECT * FROM sender
+SELECT * FROM sender_fraud
 WHERE uid = 'C840083671' AND isFraud = 1;
 
 -- # 2 Return 3 biggest transactions for specific user (uid)
-SELECT * FROM sender
+SELECT * FROM sender_amount
 WHERE uid = 'C840083671'
 ORDER BY amount DESC
 LIMIT 3;

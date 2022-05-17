@@ -21,10 +21,13 @@ class CassandraClient:
         self.session.shutdown()
 
     def insert_into_table(self, table, *values):
-        if table == "sender":
+        if table == "sender_fraud":
             query = f"INSERT INTO {table} (uid, isFraud, amount) " \
                     f"VALUES ($${values[0]}$$, {values[1]}, {values[2]})"
+        elif table == "sender_amount":
+            query = f"INSERT INTO {table} (uid, amount) " \
+                    f"VALUES ($${values[0]}$$, {values[1]})"
         else:  # receiver
-            query = f"INSERT INTO {table} (uid, transaction_data, amount) " \
+            query = f"INSERT INTO {table} (uid, transaction_date, amount) " \
                     f"VALUES ($${values[0]}$$, $${values[1]}$$, {values[2]});"
         self.execute(query)

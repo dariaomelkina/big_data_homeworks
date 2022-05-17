@@ -1,3 +1,4 @@
 docker run --name cassandra-node --network kafka-cassandra-network -p 9042:9042 -d cassandra:latest
-docker cp ddl.cql cassandra-node1:/
-docker exec cassandra-node1 cqlsh -f ddl.cql
+sleep 70
+docker cp cassandra_part/ddl.cql cassandra-node:/
+docker exec cassandra-node cqlsh -f ddl.cql

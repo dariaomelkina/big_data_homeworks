@@ -4,6 +4,7 @@ Create Kafka and Cassandra clusters in one network:
 bash kafka_part/run-kafka-cluster.sh
 bash cassandra_part/run-cassandra-cluster.sh
 ```
+P.S. Cassandra installation takes more than a minute to be sure that we can connect to server to create keyspace.
 
 Write messages about transaction frauds into Kafka topic called "frauds" 
 (path to file with transactions is hardcoded in [kafka_part/write_to_kafka.py](kafka_part/write_to_kafka.py) file):
@@ -11,12 +12,25 @@ Write messages about transaction frauds into Kafka topic called "frauds"
 bash kafka_part/write_to_kafka.sh
 ```
 
-At the same time run code, which reads from Kafka and writes into Cassandra:
+At the same time (in a different terminal instance) run code, 
+which reads from Kafka and writes into Cassandra:
 ```
 bash from_kafka_to_cassandra.sh
 ```
 
+To run app with rest api:
+```
+bash rest_api/app.sh
+```
+Chain producer-Kafka-consumer as presented in docker ps:
+![chain](images/chain.png)
 
+Examples of http queries in [rest_api/Requests.http](rest_api/Requests.http).
+
+Queries results example:
+![results example](images/res1.png)
+![results example](images/res2.png)
+![results example](images/res3.png)
 
 To shutdown both Kafka and Cassandra clusters:
 ```

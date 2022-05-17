@@ -1,6 +1,6 @@
 import json
 
-from cassandra_part import CassandraClient
+from CassandraClient import CassandraClient
 from kafka import KafkaConsumer
 
 if __name__ == "__main__":
@@ -15,7 +15,9 @@ if __name__ == "__main__":
                              value_deserializer=lambda m: json.loads(m.decode('ascii')))
 
     for message in consumer:
-        client.insert_into_table("sender", message['nameOrig'], message['isFraud'], message['amount'])
-        client.insert_into_table("receiver", message['nameDest'], message['transaction_date'], message['amount'])
+        value = message.value
+        client.insert_into_table("sender_fraud", value['nameOrig'], value['isFraud'], value['amount'])
+        client.insert_into_table("sender_amount", value['nameOrig'], value['amount'])
+        client.insert_into_table("receiver", value['nameDest'], value['transaction_date'], value['amount'])
 
     client.close()

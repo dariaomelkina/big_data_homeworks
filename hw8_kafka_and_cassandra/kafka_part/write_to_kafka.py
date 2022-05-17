@@ -26,7 +26,7 @@ if __name__ == "__main__":
                                      'nameDest': lines['nameDest'],
                                      'isFraud': lines['isFraud'],
                                      'amount': lines['amount'],
-                                     'transaction_data': (datetime.datetime.today() -
+                                     'transaction_date': (datetime.datetime.today() -
                                                           datetime.timedelta(
                                                               days=random.randint(0, 10))
                                                           ).strftime("%Y-%m-%d"),

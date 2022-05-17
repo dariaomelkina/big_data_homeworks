@@ -1,0 +1,31 @@
+###
+# Task 1
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 1,
+  "uid": "C840083671"
+}
+
+###
+# Task 2
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 2,
+  "uid": "C840083671"
+}
+
+###
+# Task 3
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "question": 3,
+  "uid": "C476402209",
+  "start_date": "2022-05-01",
+  "end_date": "2022-05-15"
+}

@@ -4,11 +4,11 @@ RUN apt-get update
 
 RUN pip install --upgrade pip
 RUN pip install cassandra-driver
-RUN pip install kafka-python
+RUN pip install flask
 
 WORKDIR /python-docker
 
-COPY ./from_kafka_to_cassandra.py .
+COPY rest_api/app.py .
 COPY cassandra_part/CassandraClient.py .
 
-CMD [ "python3", "from_kafka_to_cassandra.py"]
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=8080"]
