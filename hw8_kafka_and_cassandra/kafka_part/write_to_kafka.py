@@ -10,17 +10,9 @@ if __name__ == "__main__":
     producer = KafkaProducer(bootstrap_servers='kafka-server:9092',
                              value_serializer=lambda m: json.dumps(m).encode('ascii'))
 
-    # TODO: прибрати це
-    constrain = 20
-
     with open('PS_20174392719_1491204439457_log.csv', mode='r') as file:
         csvFile = csv.DictReader(file)
         for lines in csvFile:
-
-            # TODO: прибрати це
-            if constrain == 0:
-                break
-            constrain -= 1
 
             producer.send('frauds', {'nameOrig': lines['nameOrig'],
                                      'nameDest': lines['nameDest'],

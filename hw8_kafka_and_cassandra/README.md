@@ -27,7 +27,7 @@ Chain producer-Kafka-consumer as presented in docker ps:
 
 Examples of http queries in [rest_api/Requests.http](rest_api/Requests.http).
 
-Queries results example:
+Queries results example (after 90 minutes of chain work):
 ![results example](images/res1.png)
 ![results example](images/res2.png)
 ![results example](images/res3.png)
