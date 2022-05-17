@@ -6,7 +6,8 @@
 5. [HW 5: Kafka basics](hw5_kafka_basics)
 6. [HW 6: Kafka read with code](hw6_kafka_read_with_code)
 7. [HW 7: Kafka write with code](hw7_kafka_write_with_code)
-8. [HW 8:](hw8_)
+8. [HW 8: Kafka and Cassandra communication through code](hw8_kafka_and_cassandra)
 9. [HW 9:](hw9_)
+9. [HW 10:](hw10_)
 
 Further details/information on homeworks are in their own README files in respective folders.
