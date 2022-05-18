@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
+import pandas as pd
 
 if __name__ == "__main__":
     spark = SparkSession.builder.appName('SimpleSparkProject').getOrCreate()
@@ -13,23 +14,10 @@ if __name__ == "__main__":
     # df_videos.show(vertical = True)
 
     # Categories
-    category_schema = StructType([
-        StructField('kind', StringType()),
-        StructField('etag', StringType()),
-        StructField('items',
-                    ArrayType(StructType([
-                        StructField('kind', StringType()),
-                        StructField('etag', StringType()),
-                        StructField('id', StringType()),
-
-                        StructField('snippet', StructType([StructField('channelId', StringType()),
-                                                           StructField('title', StringType()),
-                                                           StructField('assignable', BooleanType())])),
-                    ])))
-    ])
-    df_categories = spark.read.json('japan_data/JP_category_id.json', schema=category_schema)
-
-    df_categories.select("items").show()
-
-    # sqlContext.read.json('japan_data/JP_category_id.json', schema=category_schema).registerTempTable('df')
-    # sqlContext.sql("select explode(col) from (select explode(col.items) from df)").show()
+    df_categories = spark.createDataFrame(pd.read_json('japan_data/JP_category_id.json')["items"])
+    df_categories = df_categories.withColumn("channelId", df_categories.snippet['channelId'])
+    df_categories = df_categories.withColumn("title", df_categories.snippet['title'])
+    df_categories = df_categories.withColumn("assignable", df_categories.snippet['assignable'])
+    df_categories = df_categories.drop('snippet')
+    # print(df_categories)
+    # df_categories.show()
