@@ -1,0 +1,1 @@
+spark-submit --master local[*] --deploy-mode client read_using_spark.py
