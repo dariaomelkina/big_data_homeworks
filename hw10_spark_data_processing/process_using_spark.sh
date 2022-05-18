@@ -1,0 +1,1 @@
+spark-submit --master local[*] --deploy-mode client process_using_spark.py
