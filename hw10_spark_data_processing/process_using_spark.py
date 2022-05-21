@@ -130,49 +130,83 @@ if __name__ == "__main__":
     #     outfile.write(json_object)
 
     ################################################################################################################
-    print("Answering question 3...")
-    months_data = dict()
+    # print("Answering question 3...")
+    # months_data = dict()
+    # for row in df_videos.collect():
+    #     # Using year.month as a key here
+    #     video_date = process_date(row["trending_date"])
+    #     if not video_date:
+    #         continue
+    #     month_key = video_date.strftime('%y.%m')
+    #
+    #     if month_key not in months_data:
+    #         months_data[month_key] = dict()
+    #
+    #     tags = row["tags"]
+    #     for tag in tags:
+    #         if tag not in months_data[month_key]:
+    #             months_data[month_key][tag] = set()
+    #         months_data[month_key][tag].add(row["video_id"])
+    #
+    # answer_3 = {"months": []}
+    # for month, tags in months_data.items():
+    #     tags_items = list(tags.items())
+    #     popular_tags = dict(sorted(tags_items, key=lambda x: len(x[1]), reverse=True)[:10])
+    #
+    #     start_date = datetime.datetime(int(month.split(".")[0]), int(month.split(".")[1]), 1)
+    #     end_date = start_date.replace(day=calendar.monthrange(start_date.year, start_date.month)[1])
+    #
+    #     answer_3["months"].append({
+    #         "start_date": start_date.strftime('%y.%d.%m'),
+    #         "end_date": end_date.strftime('%y.%d.%m'),
+    #         "tags": [{"tag": tag,
+    #                   "number_of_videos": len(videos),
+    #                   "video_ids": list(videos)}
+    #                  for tag, videos in popular_tags.items()]
+    #     })
+    #
+    # json_object = json.dumps(answer_3)
+    # with open("results/answer3.json", "w") as outfile:
+    #     outfile.write(json_object)
+
+    ################################################################################################################
+    print("Answering question 4...")
+    dates = [process_date(date[0]) for date in df_videos.select("trending_date").collect() if process_date(date[0])]
+    start_date = min(dates).strftime('%y.%d.%m')
+    end_date = max(dates).strftime('%y.%d.%m')
+
+    channels_views = dict()
     for row in df_videos.collect():
-        # Using year.month as a key here
-        video_date = process_date(row["trending_date"])
-        if not video_date:
+        channel = row['channel_title']
+        if channel not in channels_views:
+            channels_views[channel] = 0
+        try:
+            channels_views[channel] += int(row['views'])
+        except:
             continue
-        month_key = video_date.strftime('%y.%m')
 
-        if month_key not in months_data:
-            months_data[month_key] = dict()
+    channel_items = list(channels_views.items())
+    top_channels = dict(sorted(channel_items, key=lambda x: x[1], reverse=True)[:20])
 
-        tags = row["tags"]
-        for tag in tags:
-            if tag not in months_data[month_key]:
-                months_data[month_key][tag] = set()
-            months_data[month_key][tag].add(row["video_id"])
+    answer_4 = {"channels": []}
+    for channel, total_views in top_channels.items():
+        videos_data = df_videos.where(df_videos['channel_title'] == channel).collect()
 
-    answer_3 = {"months": []}
-    for month, tags in months_data.items():
-        tags_items = list(tags.items())
-        popular_tags = dict(sorted(tags_items, key=lambda x: len(x[1]), reverse=True)[:10])
-
-        start_date = datetime.datetime(int(month.split(".")[0]), int(month.split(".")[1]), 1)
-        end_date = start_date.replace(day=calendar.monthrange(start_date.year, start_date.month)[1])
-
-        answer_3["months"].append({
-            "start_date": start_date.strftime('%y.%d.%m'),
-            "end_date": end_date.strftime('%y.%d.%m'),
-            "tags": [{"tag": tag,
-                      "number_of_videos": len(videos),
-                      "video_ids": list(videos)}
-                     for tag, videos in popular_tags.items()]
+        answer_4["channels"].append({
+            "channel_name": channel,
+            "start_date": start_date,
+            "end_date": end_date,
+            "total_views": total_views,
+            "videos_views": [{"video_id": i["video_id"],
+                              "views": i["views"]}
+                             for i in videos_data]
         })
 
-    json_object = json.dumps(answer_3)
-    with open("results/answer3.json", "w") as outfile:
+    json_object = json.dumps(answer_4)
+    with open("results/answer4.json", "w") as outfile:
         outfile.write(json_object)
 
-    # print("4) Show the top 20 channels by the number of views for the whole period. Note, "
-    #       "if there are multiple appearances of the same video for some channel, you should take "
-    #       "into account only the last appearance (with the highest number of views).")
-    #
+
     # print("5) Show the top 10 channels with videos trending for the highest number of days "
     #       "(it doesn't need to be a consecutive period of time) for the whole period. In order to calculate it, "
     #       "you may use the results from the question №1. The total_trending_days count will be a sum of "
