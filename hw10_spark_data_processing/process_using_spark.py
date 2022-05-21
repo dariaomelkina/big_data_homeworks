@@ -6,12 +6,15 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
 
-def process_date(date):
+def process_date(given_date):
     """
     year.day.month =>  datetime(year, month, day)
     """
-    date_split = date.split(".")
-    return datetime.datetime(int(date_split[0]), int(date_split[2]), int(date_split[1]))
+    date_split = given_date.split(".")
+    try:
+        return datetime.datetime(int(date_split[0]), int(date_split[2]), int(date_split[1]))
+    except:
+        return None
 
 
 if __name__ == "__main__":
@@ -29,48 +32,103 @@ if __name__ == "__main__":
     df_categories = df_categories.drop('snippet')
 
     # Answers
-    print("1) Find Top 10 videos that were amongst the trending videos for the highest number of days "
-          "(it doesn't need to be a consecutive period of time). You should also include "
-          "information about different metrics for each day the video was trending.")
+    ################################################################################################################
+    # print("Answering question 1...")
+    # trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
+    #     .withColumnRenamed("video_id", "id")
+    # trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
+    #     .dropDuplicates(["video_id"]).select(["id", "title", "description"])
+    # trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
+    #     .select("trending_date", "views", "likes", "dislikes")
+    #     .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
+    #                  for tr_id in trending_videos.select("id").collect()}
+    # latest_days = dict()
+    # for video_id, data in trending_days.items():
+    #     details = {process_date(day["date"]): {"views": day["views"],
+    #                                            "likes": day["likes"],
+    #                                            "dislikes": day["dislikes"]} for day in data}
+    #     latest_days[video_id] = details[max(details.keys())]
+    #
+    # answer_1 = {"videos": []}
+    # for video in trending_videos.collect():
+    #     answer_1["videos"].append({"id": video["id"],
+    #                                "title": video["title"],
+    #                                "description": video["description"],
+    #                                "latest_views": latest_days[video["id"]]["views"],
+    #                                "latest_likes": latest_days[video["id"]]["likes"],
+    #                                "latest_dislikes": latest_days[video["id"]]["dislikes"],
+    #                                "trending_days": trending_days[video["id"]]
+    #                                })
+    #
+    # json_object = json.dumps(answer_1)
+    # with open("results/answer1.json", "w") as outfile:
+    #     outfile.write(json_object)
 
-    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
-        .withColumnRenamed("video_id", "id")
-    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
-        .dropDuplicates(["video_id"]).select(["id", "title", "description"])
-    trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
-        .select("trending_date", "views", "likes", "dislikes")
-        .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
-                     for tr_id in trending_videos.select("id").collect()}
-    latest_days = dict()
-    for video_id, data in trending_days.items():
-        details = {process_date(day["date"]): {"views": day["views"],
-                                               "likes": day["likes"],
-                                               "dislikes": day["dislikes"]} for day in data}
-        latest_days[video_id] = details[max(details.keys())]
+    ################################################################################################################
+    print("Answering question 2...")
+    weeks_category_data = dict()
+    for row in df_videos.collect():
+        video_id = row["video_id"]
+        category_id = row["category_id"]
+        # Using week start as a week key here
+        video_date = process_date(row["trending_date"])
+        if not video_date:
+            continue
+        week_key = (video_date - datetime.timedelta(days=video_date.weekday())).strftime('%y.%d.%m')
 
-    answer_1 = {"videos": []}
-    for video in trending_videos.collect():
-        answer_1["videos"].append({"id": video["id"],
-                                   "title": video["title"],
-                                   "description": video["description"],
-                                   "latest_views": latest_days[video["id"]]["views"],
-                                   "latest_likes": latest_days[video["id"]]["likes"],
-                                   "latest_dislikes": latest_days[video["id"]]["dislikes"],
-                                   "trending_days": trending_days[video["id"]]
-                                   })
+        if week_key not in weeks_category_data:
+            weeks_category_data[week_key] = dict()
 
-    json_object = json.dumps(answer_1)
-    with open("results/answer1.json", "w") as outfile:
+        if category_id not in weeks_category_data[week_key]:
+            weeks_category_data[week_key][category_id] = dict()
+
+        if video_id not in weeks_category_data[week_key][category_id]:
+            weeks_category_data[week_key][category_id][video_id] = []
+
+        if row["views"]:
+            weeks_category_data[week_key][category_id][video_id].append(int(row["views"]))
+
+    weeks = []
+    for date, categories in weeks_category_data.items():
+        start_date = date
+        end_date = (process_date(start_date) + datetime.timedelta(days=6)).strftime('%y.%d.%m')
+
+        best_category_id = None
+        total_views = 0
+        video_ids = []
+
+        for category, videos in categories.items():
+            category_views = 0
+            for video, video_views in videos.items():
+                if len(video_views) < 2:
+                    continue
+                category_views += sum(video_views[1:]) - video_views[0]
+
+            if category_views > total_views:
+                best_category_id = category
+                total_views = category_views
+                video_ids = list(videos.keys())
+
+        number_of_videos = len(video_ids)
+        category_name = df_categories.where(df_categories["id"] == best_category_id).select("title").collect()[0][0]
+
+        weeks.append({
+            "start_date": start_date,
+            "end_date": end_date,
+            "category_id": best_category_id,
+            "category_name": category_name,
+            "number_of_videos": number_of_videos,
+            "total_views": total_views,
+            "video_ids": video_ids
+        })
+
+    answer_2 = {"weeks": weeks}
+
+    json_object = json.dumps(answer_2)
+    with open("results/answer2.json", "w") as outfile:
         outfile.write(json_object)
 
-    # print("2) Find what was the most popular category for each week (7 days slices). "
-    #       "Popularity is decided based on the total number of views for videos of this category. "
-    #       "Note, to calculate it you can’t just sum up the number of views.If a particular video appeared only "
-    #       "once during the given period, it shouldn’t be counted. Only if it appeared more than once you should "
-    #       "count the number of new views. For example, if video A appeared on day 1 with 100 views, then on day 4 "
-    #       "with 250 views and again on day 6 with 400 views, you should count it as 400 - 100 = 300. For our purpose, "
-    #       "it will mean that this particular video was watched 300 times in the given time period.")
-    #
+    ################################################################################################################
     # print("3) What were the 10 most used tags amongst trending videos for each 30days time period? "
     #       "Note, if during the specified period the same video appears multiple times, "
     #       "you should count tags related to that video only once.")
