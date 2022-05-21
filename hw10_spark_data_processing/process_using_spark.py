@@ -1,6 +1,18 @@
+import datetime
+import json
+
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
+
+
+def process_date(date):
+    """
+    year.day.month =>  datetime(year, month, day)
+    """
+    date_split = date.split(".")
+    return datetime.datetime(int(date_split[0]), int(date_split[2]), int(date_split[1]))
+
 
 if __name__ == "__main__":
     spark = SparkSession.builder.appName('SimpleSparkProject').getOrCreate()
@@ -21,34 +33,35 @@ if __name__ == "__main__":
           "(it doesn't need to be a consecutive period of time). You should also include "
           "information about different metrics for each day the video was trending.")
 
-    # trending_day_schema = StructType([StructField("date", StringType(), True),
-    #                                   StructField("views", LongType(), True),
-    #                                   StructField("likes", LongType(), True),
-    #                                   StructField("dislikes", LongType(), True),
-    #                                   ])
-    # video_schema = StructType([StructField("id", StringType(), True),
-    #                            StructField("title", StringType(), True),
-    #                            StructField("description", StringType(), True),
-    #                            StructField("latest_views", LongType(), True),
-    #                            StructField("latest_likes", LongType(), True),
-    #                            StructField("latest_dislikes", LongType(), True),
-    #                            StructField("trending_days", ArrayType(trending_day_schema), True),
-    #                            ])
-    # answer1_schema = StructType([StructField("videos", ArrayType(video_schema), True)])
-    # answer1_df = spark.createDataFrame(data=spark.sparkContext.emptyRDD(), schema=answer1_schema)
-    # answer1_df.printSchema()
-
-    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10)\
+    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
         .withColumnRenamed("video_id", "id")
     trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
         .dropDuplicates(["video_id"]).select(["id", "title", "description"])
+    trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
+        .select("trending_date", "views", "likes", "dislikes")
+        .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
+                     for tr_id in trending_videos.select("id").collect()}
+    latest_days = dict()
+    for video_id, data in trending_days.items():
+        details = {process_date(day["date"]): {"views": day["views"],
+                                               "likes": day["likes"],
+                                               "dislikes": day["dislikes"]} for day in data}
+        latest_days[video_id] = details[max(details.keys())]
 
-    trending_videos.show()
-    # .withColumnRenamed(
-    #     "video_id", "id")
-    # df_videos.where(trending_id.video_id.contains(df_videos.video_id)).show(vertical=True)
+    answer_1 = {"videos": []}
+    for video in trending_videos.collect():
+        answer_1["videos"].append({"id": video["id"],
+                                   "title": video["title"],
+                                   "description": video["description"],
+                                   "latest_views": latest_days[video["id"]]["views"],
+                                   "latest_likes": latest_days[video["id"]]["likes"],
+                                   "latest_dislikes": latest_days[video["id"]]["dislikes"],
+                                   "trending_days": trending_days[video["id"]]
+                                   })
 
-    # answer1_df.write.json(path='./results/answer1')
+    json_object = json.dumps(answer_1)
+    with open("results/answer1.json", "w") as outfile:
+        outfile.write(json_object)
 
     # print("2) Find what was the most popular category for each week (7 days slices). "
     #       "Popularity is decided based on the total number of views for videos of this category. "
