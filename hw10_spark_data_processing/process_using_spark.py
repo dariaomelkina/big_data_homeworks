@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import json
 
@@ -65,74 +66,109 @@ if __name__ == "__main__":
     #     outfile.write(json_object)
 
     ################################################################################################################
-    print("Answering question 2...")
-    weeks_category_data = dict()
+    # print("Answering question 2...")
+    # weeks_category_data = dict()
+    # for row in df_videos.collect():
+    #     video_id = row["video_id"]
+    #     category_id = row["category_id"]
+    #     # Using week start as a week key here
+    #     video_date = process_date(row["trending_date"])
+    #     if not video_date:
+    #         continue
+    #     week_key = (video_date - datetime.timedelta(days=video_date.weekday())).strftime('%y.%d.%m')
+    #
+    #     if week_key not in weeks_category_data:
+    #         weeks_category_data[week_key] = dict()
+    #
+    #     if category_id not in weeks_category_data[week_key]:
+    #         weeks_category_data[week_key][category_id] = dict()
+    #
+    #     if video_id not in weeks_category_data[week_key][category_id]:
+    #         weeks_category_data[week_key][category_id][video_id] = []
+    #
+    #     if row["views"]:
+    #         weeks_category_data[week_key][category_id][video_id].append(int(row["views"]))
+    #
+    # weeks = []
+    # for date, categories in weeks_category_data.items():
+    #     start_date = date
+    #     end_date = (process_date(start_date) + datetime.timedelta(days=6)).strftime('%y.%d.%m')
+    #
+    #     best_category_id = None
+    #     total_views = 0
+    #     video_ids = []
+    #
+    #     for category, videos in categories.items():
+    #         category_views = 0
+    #         for video, video_views in videos.items():
+    #             if len(video_views) < 2:
+    #                 continue
+    #             category_views += sum(video_views[1:]) - video_views[0]
+    #
+    #         if category_views > total_views:
+    #             best_category_id = category
+    #             total_views = category_views
+    #             video_ids = list(videos.keys())
+    #
+    #     number_of_videos = len(video_ids)
+    #     category_name = df_categories.where(df_categories["id"] == best_category_id).select("title").collect()[0][0]
+    #
+    #     weeks.append({
+    #         "start_date": start_date,
+    #         "end_date": end_date,
+    #         "category_id": best_category_id,
+    #         "category_name": category_name,
+    #         "number_of_videos": number_of_videos,
+    #         "total_views": total_views,
+    #         "video_ids": video_ids
+    #     })
+    #
+    # answer_2 = {"weeks": weeks}
+    #
+    # json_object = json.dumps(answer_2)
+    # with open("results/answer2.json", "w") as outfile:
+    #     outfile.write(json_object)
+
+    ################################################################################################################
+    print("Answering question 3...")
+    months_data = dict()
     for row in df_videos.collect():
-        video_id = row["video_id"]
-        category_id = row["category_id"]
-        # Using week start as a week key here
+        # Using year.month as a key here
         video_date = process_date(row["trending_date"])
         if not video_date:
             continue
-        week_key = (video_date - datetime.timedelta(days=video_date.weekday())).strftime('%y.%d.%m')
+        month_key = video_date.strftime('%y.%m')
 
-        if week_key not in weeks_category_data:
-            weeks_category_data[week_key] = dict()
+        if month_key not in months_data:
+            months_data[month_key] = dict()
 
-        if category_id not in weeks_category_data[week_key]:
-            weeks_category_data[week_key][category_id] = dict()
+        tags = row["tags"]
+        for tag in tags:
+            if tag not in months_data[month_key]:
+                months_data[month_key][tag] = set()
+            months_data[month_key][tag].add(row["video_id"])
 
-        if video_id not in weeks_category_data[week_key][category_id]:
-            weeks_category_data[week_key][category_id][video_id] = []
+    answer_3 = {"months": []}
+    for month, tags in months_data.items():
+        tags_items = list(tags.items())
+        popular_tags = dict(sorted(tags_items, key=lambda x: len(x[1]), reverse=True)[:10])
 
-        if row["views"]:
-            weeks_category_data[week_key][category_id][video_id].append(int(row["views"]))
+        start_date = datetime.datetime(int(month.split(".")[0]), int(month.split(".")[1]), 1)
+        end_date = start_date.replace(day=calendar.monthrange(start_date.year, start_date.month)[1])
 
-    weeks = []
-    for date, categories in weeks_category_data.items():
-        start_date = date
-        end_date = (process_date(start_date) + datetime.timedelta(days=6)).strftime('%y.%d.%m')
-
-        best_category_id = None
-        total_views = 0
-        video_ids = []
-
-        for category, videos in categories.items():
-            category_views = 0
-            for video, video_views in videos.items():
-                if len(video_views) < 2:
-                    continue
-                category_views += sum(video_views[1:]) - video_views[0]
-
-            if category_views > total_views:
-                best_category_id = category
-                total_views = category_views
-                video_ids = list(videos.keys())
-
-        number_of_videos = len(video_ids)
-        category_name = df_categories.where(df_categories["id"] == best_category_id).select("title").collect()[0][0]
-
-        weeks.append({
-            "start_date": start_date,
-            "end_date": end_date,
-            "category_id": best_category_id,
-            "category_name": category_name,
-            "number_of_videos": number_of_videos,
-            "total_views": total_views,
-            "video_ids": video_ids
+        answer_3["months"].append({
+            "start_date": start_date.strftime('%y.%d.%m'),
+            "end_date": end_date.strftime('%y.%d.%m'),
+            "tags": [{"tag": tag,
+                      "number_of_videos": len(videos),
+                      "video_ids": list(videos)}
+                     for tag, videos in popular_tags.items()]
         })
 
-    answer_2 = {"weeks": weeks}
-
-    json_object = json.dumps(answer_2)
-    with open("results/answer2.json", "w") as outfile:
+    json_object = json.dumps(answer_3)
+    with open("results/answer3.json", "w") as outfile:
         outfile.write(json_object)
 
-    ################################################################################################################
-    # print("3) What were the 10 most used tags amongst trending videos for each 30days time period? "
-    #       "Note, if during the specified period the same video appears multiple times, "
-    #       "you should count tags related to that video only once.")
-    #
     # print("4) Show the top 20 channels by the number of views for the whole period. Note, "
     #       "if there are multiple appearances of the same video for some channel, you should take "
     #       "into account only the last appearance (with the highest number of views).")
@@ -145,3 +181,14 @@ if __name__ == "__main__":
     # print("6) Show the top 10 videos by the ratio of likes/dislikes for each category for the whole period. "
     #       "You should consider only videos with more than 100K views. If the same video occurs multiple times "
     #       "you should take the record when the ratio was the highest.")
+
+    # print("Finished creating all answers.")
+
+    # dates = [process_date(date[0]) for date in df_videos.select("trending_date").collect() if process_date(date[0])]
+    # curr_date = min(dates)
+    # thirty_day_period_starts = []
+    # while curr_date <= max(dates):
+    #     thirty_day_period_starts.append(curr_date)
+    #     curr_date = curr_date + datetime.timedelta(days=30)
+    #
+    # print(thirty_day_period_starts)
