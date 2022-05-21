@@ -1,6 +1,5 @@
 import pandas as pd
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
 from pyspark.sql.types import *
 
 if __name__ == "__main__":
@@ -8,7 +7,7 @@ if __name__ == "__main__":
     spark.sparkContext.setLogLevel("ERROR")
 
     # Videos
-    df_videos = spark.read.options(header=True).csv('japan_data/JPvideos.csv')
+    df_videos = spark.read.options(header=True).csv('japan_data/JPvideos.csv').na.drop(subset=["title"])
 
     # Categories
     df_categories = spark.createDataFrame(pd.read_json('japan_data/JP_category_id.json')["items"])
@@ -36,16 +35,15 @@ if __name__ == "__main__":
     #                            StructField("trending_days", ArrayType(trending_day_schema), True),
     #                            ])
     # answer1_schema = StructType([StructField("videos", ArrayType(video_schema), True)])
-    #
     # answer1_df = spark.createDataFrame(data=spark.sparkContext.emptyRDD(), schema=answer1_schema)
     # answer1_df.printSchema()
 
-    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10)
-    # trending_id.withColumn('title', df_videos.where(trending_id.video_id == df_videos.video_id).select(col("title"))).show()
+    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10)\
+        .withColumnRenamed("video_id", "id")
+    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
+        .dropDuplicates(["video_id"]).select(["id", "title", "description"])
 
-    print(df_videos.filter(df_videos.video_id.isin(trending_id.select('video_id').rdd.flatMap(lambda x: x).collect())).count())
-
-
+    trending_videos.show()
     # .withColumnRenamed(
     #     "video_id", "id")
     # df_videos.where(trending_id.video_id.contains(df_videos.video_id)).show(vertical=True)

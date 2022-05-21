@@ -15,3 +15,5 @@ hw10_spark_data_processing/japan_data
 hw10_spark_data_processing/test.json
 *.crc
 _SUCCESS
+hw10_spark_data_processing/us_data
+hw10_spark_data_processing/canada_data

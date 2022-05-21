@@ -9,6 +9,9 @@ For data processing I chose videos and categories for Japan (files JP_category_i
 Data must be in a directory called "japan_data", with parent directory being this one 
 (**big_data_homeworks/hw10_spark_data_processing/japan_data**). 
 
+P.S. In the files which I tested there were some problems with video ids –– a lot of them were not ids at all. 
+I also decided to drop all the videos with "null" titles, because there records were mostly completely empty.
+
 Read data using Spark and answer questions from the task:
 ```
 bash process_using_spark.sh
