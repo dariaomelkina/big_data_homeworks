@@ -6,7 +6,6 @@ import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-
 def process_date(given_date):
     """
     year.day.month =>  datetime(year, month, day)
@@ -34,15 +33,15 @@ if __name__ == "__main__":
 
     # Answers
     ################################################################################################################
-    # print("Answering question 1...")
-    # trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
-    #     .withColumnRenamed("video_id", "id")
-    # trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
-    #     .dropDuplicates(["video_id"]).select(["id", "title", "description"])
-    # trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
-    #     .select("trending_date", "views", "likes", "dislikes")
-    #     .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
-    #                  for tr_id in trending_videos.select("id").collect()}
+    print("Answering question 1...")
+    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
+        .withColumnRenamed("video_id", "id")
+    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
+        .dropDuplicates(["video_id"]).select(["id", "title", "description"])
+    trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
+        .select("trending_date", "views", "likes", "dislikes")
+        .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
+                     for tr_id in trending_videos.select("id").collect()}
     # latest_days = dict()
     # for video_id, data in trending_days.items():
     #     details = {process_date(day["date"]): {"views": day["views"],
@@ -170,48 +169,67 @@ if __name__ == "__main__":
     #     outfile.write(json_object)
 
     ################################################################################################################
-    print("Answering question 4...")
-    dates = [process_date(date[0]) for date in df_videos.select("trending_date").collect() if process_date(date[0])]
-    start_date = min(dates).strftime('%y.%d.%m')
-    end_date = max(dates).strftime('%y.%d.%m')
+    # print("Answering question 4...")
+    # dates = [process_date(date[0]) for date in df_videos.select("trending_date").collect() if process_date(date[0])]
+    # start_date = min(dates).strftime('%y.%d.%m')
+    # end_date = max(dates).strftime('%y.%d.%m')
+    #
+    # channels_views = dict()
+    # for row in df_videos.collect():
+    #     channel = row['channel_title']
+    #     if channel not in channels_views:
+    #         channels_views[channel] = 0
+    #     try:
+    #         channels_views[channel] += int(row['views'])
+    #     except:
+    #         continue
+    #
+    # channel_items = list(channels_views.items())
+    # top_channels = dict(sorted(channel_items, key=lambda x: x[1], reverse=True)[:20])
+    #
+    # answer_4 = {"channels": []}
+    # for channel, total_views in top_channels.items():
+    #     videos_data = df_videos.where(df_videos['channel_title'] == channel).collect()
+    #
+    #     answer_4["channels"].append({
+    #         "channel_name": channel,
+    #         "start_date": start_date,
+    #         "end_date": end_date,
+    #         "total_views": total_views,
+    #         "videos_views": [{"video_id": i["video_id"],
+    #                           "views": i["views"]}
+    #                          for i in videos_data]
+    #     })
+    #
+    # json_object = json.dumps(answer_4)
+    # with open("results/answer4.json", "w") as outfile:
+    #     outfile.write(json_object)
 
-    channels_views = dict()
-    for row in df_videos.collect():
-        channel = row['channel_title']
-        if channel not in channels_views:
-            channels_views[channel] = 0
-        try:
-            channels_views[channel] += int(row['views'])
-        except:
-            continue
+    ################################################################################################################
+    print("Answering question 5...")
+    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner")
+    video_ids = []
+    answer_5 = {"channels": []}
+    for video in trending_videos.collect():
+        if video["id"] not in video_ids:
+            answer_5["channels"].append({
+                "channel_name": video["channel_title"],
+                "total_trending_days": len(trending_days[video["id"]]),
+                "videos_days": [{
+                    "video_id": video["id"],
+                    "video_title": video["title"],
+                    "trending_days": len(trending_days[video["id"]])
+                }]
+            })
+            video_ids.append(video["id"])
 
-    channel_items = list(channels_views.items())
-    top_channels = dict(sorted(channel_items, key=lambda x: x[1], reverse=True)[:20])
-
-    answer_4 = {"channels": []}
-    for channel, total_views in top_channels.items():
-        videos_data = df_videos.where(df_videos['channel_title'] == channel).collect()
-
-        answer_4["channels"].append({
-            "channel_name": channel,
-            "start_date": start_date,
-            "end_date": end_date,
-            "total_views": total_views,
-            "videos_views": [{"video_id": i["video_id"],
-                              "views": i["views"]}
-                             for i in videos_data]
-        })
-
-    json_object = json.dumps(answer_4)
-    with open("results/answer4.json", "w") as outfile:
+    json_object = json.dumps(answer_5)
+    with open("results/answer5.json", "w") as outfile:
         outfile.write(json_object)
 
 
-    # print("5) Show the top 10 channels with videos trending for the highest number of days "
-    #       "(it doesn't need to be a consecutive period of time) for the whole period. In order to calculate it, "
-    #       "you may use the results from the question №1. The total_trending_days count will be a sum of "
-    #       "the numbers of trending days for videos from this channel.")
-    #
+    ################################################################################################################
+    # print("Answering question 6...")
     # print("6) Show the top 10 videos by the ratio of likes/dislikes for each category for the whole period. "
     #       "You should consider only videos with more than 100K views. If the same video occurs multiple times "
     #       "you should take the record when the ratio was the highest.")
