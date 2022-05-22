@@ -17,6 +17,11 @@ Read data using Spark and answer questions from the task:
 bash process_using_spark.sh
 ```
 
+To shutdown cluster and remove containers and network:
+```
+docker-compose down
+```
+
 Json files with results are in [results/](results) directory.
 
 Results examples:
@@ -24,7 +29,6 @@ Results examples:
 ![Results example](images/res2.png)
 ![Results example](images/res3.png)
 
-To shutdown cluster and remove containers and network:
-```
-docker-compose down
-```
+Working code example:
+![Working code example](images/code.png)
+
