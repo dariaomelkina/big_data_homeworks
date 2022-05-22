@@ -4,7 +4,9 @@ import json
 
 import pandas as pd
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 from pyspark.sql.types import *
+
 
 def process_date(given_date):
     """
@@ -33,15 +35,15 @@ if __name__ == "__main__":
 
     # Answers
     ################################################################################################################
-    print("Answering question 1...")
-    trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
-        .withColumnRenamed("video_id", "id")
-    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
-        .dropDuplicates(["video_id"]).select(["id", "title", "description"])
-    trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
-        .select("trending_date", "views", "likes", "dislikes")
-        .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
-                     for tr_id in trending_videos.select("id").collect()}
+    # print("Answering question 1...")
+    # trending_id = df_videos.groupBy("video_id").count().sort('count', ascending=False).limit(10) \
+    #     .withColumnRenamed("video_id", "id")
+    # trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner") \
+    #     .dropDuplicates(["video_id"]).select(["id", "title", "description"])
+    # trending_days = {tr_id[0]: df_videos.where(df_videos["video_id"] == tr_id[0])
+    #     .select("trending_date", "views", "likes", "dislikes")
+    #     .rdd.map(lambda r: {"date": r[0], "views": r[1], "likes": r[2], "dislikes": r[3]}).collect()
+    #                  for tr_id in trending_videos.select("id").collect()}
     # latest_days = dict()
     # for video_id, data in trending_days.items():
     #     details = {process_date(day["date"]): {"views": day["views"],
@@ -206,41 +208,71 @@ if __name__ == "__main__":
     #     outfile.write(json_object)
 
     ################################################################################################################
-    print("Answering question 5...")
-    trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner")
-    video_ids = []
-    answer_5 = {"channels": []}
-    for video in trending_videos.collect():
-        if video["id"] not in video_ids:
-            answer_5["channels"].append({
-                "channel_name": video["channel_title"],
-                "total_trending_days": len(trending_days[video["id"]]),
-                "videos_days": [{
-                    "video_id": video["id"],
-                    "video_title": video["title"],
-                    "trending_days": len(trending_days[video["id"]])
-                }]
-            })
-            video_ids.append(video["id"])
-
-    json_object = json.dumps(answer_5)
-    with open("results/answer5.json", "w") as outfile:
-        outfile.write(json_object)
-
+    # print("Answering question 5...")
+    # trending_videos = trending_id.join(df_videos, trending_id["id"] == df_videos["video_id"], "inner")
+    # video_ids = []
+    # answer_5 = {"channels": []}
+    # for video in trending_videos.collect():
+    #     if video["id"] not in video_ids:
+    #         answer_5["channels"].append({
+    #             "channel_name": video["channel_title"],
+    #             "total_trending_days": len(trending_days[video["id"]]),
+    #             "videos_days": [{
+    #                 "video_id": video["id"],
+    #                 "video_title": video["title"],
+    #                 "trending_days": len(trending_days[video["id"]])
+    #             }]
+    #         })
+    #         video_ids.append(video["id"])
+    #
+    # json_object = json.dumps(answer_5)
+    # with open("results/answer5.json", "w") as outfile:
+    #     outfile.write(json_object)
 
     ################################################################################################################
-    # print("Answering question 6...")
-    # print("6) Show the top 10 videos by the ratio of likes/dislikes for each category for the whole period. "
-    #       "You should consider only videos with more than 100K views. If the same video occurs multiple times "
-    #       "you should take the record when the ratio was the highest.")
+    print("Answering question 6...")
+    videos_with_ratio = df_videos.withColumn("ratio", df_videos.likes / df_videos.dislikes) \
+        .where(df_videos["views"] > 100000).sort(col("ratio").desc())
 
-    # print("Finished creating all answers.")
+    category_ratios = dict()
+    for video in videos_with_ratio.collect():
+        if not video["ratio"]:
+            continue
 
-    # dates = [process_date(date[0]) for date in df_videos.select("trending_date").collect() if process_date(date[0])]
-    # curr_date = min(dates)
-    # thirty_day_period_starts = []
-    # while curr_date <= max(dates):
-    #     thirty_day_period_starts.append(curr_date)
-    #     curr_date = curr_date + datetime.timedelta(days=30)
-    #
-    # print(thirty_day_period_starts)
+        if video["category_id"] not in category_ratios:
+            category_ratios[video["category_id"]] = dict()
+
+        if video["video_id"] in category_ratios[video["category_id"]]:
+            if video["ratio"] < category_ratios[video["category_id"]][video["video_id"]]:
+                continue
+
+        category_ratios[video["category_id"]][video["video_id"]] = video["ratio"]
+
+    answer_6 = {"categories": []}
+    for category, videos in category_ratios.items():
+        videos_items = list(videos.items())
+        top_10 = dict(sorted(videos_items, key=lambda x: x[1], reverse=True)[:10])
+
+        category_name = "not_available"
+        if df_categories.where(df_categories["id"] == category).select("title").collect():
+            category_name = df_categories.where(df_categories["id"] == category).select("title").collect()[0][0]
+
+        answer_6["categories"].append({
+            "category_id": category,
+            "category_name": category_name,
+            "videos": [
+                {
+                    "video_id": vid,
+                    "video_title": df_videos.where(df_videos["video_id"] == vid).select("title").collect()[0][0],
+                    "ratio_likes_dislikes": ratio,
+                    "views": df_videos.where(df_videos["video_id"] == vid).select("views").collect()[0][0]
+                }
+                for vid, ratio in top_10.items()
+            ]
+        })
+
+    json_object = json.dumps(answer_6)
+    with open("results/answer6.json", "w") as outfile:
+        outfile.write(json_object)
+
+    print("Finished creating all answers.")
